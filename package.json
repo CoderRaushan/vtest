@@ -1,7 +1,7 @@
 {
-  "name": "webrtc-video-conference",
+  "name": "webrtc-video-conference-enhanced",
   "version": "1.0.0",
-  "description": "webrtc video conference example (not using webrtc libraries)",
+  "description": "Enhanced WebRTC video conference with user registration and calling system",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -10,22 +10,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/avoup/webrtc-video-conference.git"
+    "url": "git+https://github.com/your-username/webrtc-video-conference-enhanced.git"
   },
   "keywords": [
     "webrtc",
-    "sample",
-    "example",
-    "video",
-    "conference",
-    "tutorial"
+    "video-calling",
+    "real-time-communication",
+    "socket.io",
+    "peer-to-peer",
+    "user-registration",
+    "online-users"
   ],
-  "author": "avoup",
+  "author": "Enhanced by AI Assistant",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/avoup/webrtc-video-conference/issues"
+    "url": "https://github.com/your-username/webrtc-video-conference-enhanced/issues"
   },
-  "homepage": "https://github.com/avoup/webrtc-video-conference#readme",
+  "homepage": "https://github.com/your-username/webrtc-video-conference-enhanced#readme",
   "optionalDependencies": {
     "nodemon": "^2.0.12"
   },

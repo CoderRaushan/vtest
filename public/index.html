@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
     <head>
         <title>WebRTC Video conference</title>
@@ -29,4 +29,775 @@
         <script src="js/webrtc.js"></script>
         <script src="js/main.js"></script>
     </body>
+</html> -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebRTC Video Conference</title>
+    <link rel="shortcut icon" type="image/ico" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .login-section {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .login-section h2 {
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-success:hover, .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .main-section {
+            display: none;
+        }
+
+        .user-info {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .online-users {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .online-users h3 {
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+
+        .user-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .user-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .user-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .user-card.in-call {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+
+        .user-status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online { background: #28a745; }
+        .status-busy { background: #ffc107; }
+
+        .call-section {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .remote-video {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+        }
+
+        .local-video-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border: 3px solid white;
+        }
+
+        .local-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .call-controls {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .call-controls .btn {
+            margin: 0 10px;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 20px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: none;
+        }
+
+        .notification.success { background: #28a745; }
+        .notification.error { background: #dc3545; }
+
+        .incoming-call-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            text-align: center;
+            z-index: 1001;
+            display: none;
+            min-width: 350px;
+        }
+
+        .incoming-call-popup h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .incoming-call-popup .caller-name {
+            font-size: 1.5rem;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+
+        .call-actions {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .login-section {
+                padding: 20px;
+                margin: 0 10px;
+            }
+            
+            .local-video-container {
+                width: 120px;
+                height: 90px;
+                bottom: 10px;
+                right: 10px;
+            }
+            
+            .user-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-video"></i> Video Call App</h1>
+            <p>Connect with friends through high-quality video calls</p>
+        </div>
+
+        <!-- Login Section -->
+        <div id="loginSection" class="login-section">
+            <h2>Join the Community</h2>
+            <div class="input-group">
+                <input type="text" id="usernameInput" placeholder="Enter your username" maxlength="20">
+            </div>
+            <button id="registerBtn" class="btn btn-primary">
+                <i class="fas fa-sign-in-alt"></i> Join Now
+            </button>
+        </div>
+
+        <!-- Main Section -->
+        <div id="mainSection" class="main-section">
+            <div class="user-info">
+                <h2>Welcome, <span id="currentUsername"></span>!</h2>
+                <p>You're now online and ready to make calls</p>
+            </div>
+
+            <div class="online-users">
+                <h3><i class="fas fa-users"></i> Online Users</h3>
+                <div id="userList" class="user-list">
+                    <!-- Users will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Call Section -->
+        <div id="callSection" class="call-section">
+            <div class="video-container">
+                <video id="remoteVideo" class="remote-video" autoplay playsinline></video>
+                <div class="local-video-container">
+                    <video id="localVideo" class="local-video" autoplay playsinline muted></video>
+                </div>
+            </div>
+            
+            <div class="call-controls">
+                <button id="endCallBtn" class="btn btn-danger">
+                    <i class="fas fa-phone-slash"></i>
+                </button>
+            </div>
+            
+            <div style="text-align: center; margin-top: 15px;">
+                <p>In call with: <strong id="currentCallUser"></strong></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div id="notification" class="notification"></div>
+
+    <!-- Incoming Call Popup -->
+    <div id="overlay" class="overlay"></div>
+    <div id="incomingCallPopup" class="incoming-call-popup">
+        <h3><i class="fas fa-phone-alt"></i> Incoming Call</h3>
+        <div id="callerName" class="caller-name"></div>
+        <div class="call-actions">
+            <button id="acceptCallBtn" class="btn btn-success">
+                <i class="fas fa-phone"></i> Accept
+            </button>
+            <button id="rejectCallBtn" class="btn btn-danger">
+                <i class="fas fa-phone-slash"></i> Decline
+            </button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+    <script>
+        'use strict';
+
+        const socket = io.connect();
+        let currentUser = null;
+        let currentCall = null;
+        let webrtc = null;
+
+        // DOM elements
+        const loginSection = document.getElementById('loginSection');
+        const mainSection = document.getElementById('mainSection');
+        const callSection = document.getElementById('callSection');
+        const usernameInput = document.getElementById('usernameInput');
+        const registerBtn = document.getElementById('registerBtn');
+        const currentUsername = document.getElementById('currentUsername');
+        const userList = document.getElementById('userList');
+        const notification = document.getElementById('notification');
+        const overlay = document.getElementById('overlay');
+        const incomingCallPopup = document.getElementById('incomingCallPopup');
+        const callerName = document.getElementById('callerName');
+        const acceptCallBtn = document.getElementById('acceptCallBtn');
+        const rejectCallBtn = document.getElementById('rejectCallBtn');
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const endCallBtn = document.getElementById('endCallBtn');
+        const currentCallUser = document.getElementById('currentCallUser');
+
+        // WebRTC configuration
+        const pcConfig = {
+            iceServers: [
+                {
+                    urls: [
+                        'stun:stun.l.google.com:19302',
+                        'stun:stun1.l.google.com:19302',
+                        'stun:stun2.l.google.com:19302',
+                    ],
+                },
+                {
+                    urls: 'turn:relay.metered.ca:443?transport=udp',
+                    username: 'openai',
+                    credential: 'openai123'
+                },
+                {
+                    urls: 'turn:relay.metered.ca:443?transport=tcp',
+                    username: 'openai',
+                    credential: 'openai123'
+                },
+            ]
+        };
+
+        // Initialize WebRTC class (simplified version for calling)
+        class SimpleWebRTC {
+            constructor(socket, pcConfig) {
+                this.socket = socket;
+                this.pcConfig = pcConfig;
+                this.pc = null;
+                this.localStream = null;
+                this.roomId = null;
+                this.setupSocketListeners();
+            }
+
+            async getLocalStream() {
+                try {
+                    this.localStream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: 640, height: 480 },
+                        audio: true
+                    });
+                    localVideo.srcObject = this.localStream;
+                    return this.localStream;
+                } catch (error) {
+                    console.error('Error accessing media devices:', error);
+                    showNotification('Unable to access camera/microphone', 'error');
+                    throw error;
+                }
+            }
+
+            setupSocketListeners() {
+                // WebRTC signaling events
+                this.socket.on('created', (room, socketId) => {
+                    console.log('Created room:', room);
+                });
+
+                this.socket.on('joined', (room, socketId) => {
+                    console.log('Joined room:', room);
+                    this.createPeerConnection();
+                    this.makeOffer();
+                });
+
+                this.socket.on('ready', (socketId) => {
+                    console.log('Ready to connect with:', socketId);
+                    this.createPeerConnection();
+                });
+
+                this.socket.on('message', (message, socketId) => {
+                    console.log('Received message:', message.type);
+                    this.handleSignalingMessage(message, socketId);
+                });
+            }
+
+            joinRoom(roomId) {
+                this.roomId = roomId;
+                this.socket.emit('join-call-room', roomId);
+            }
+
+            createPeerConnection() {
+                this.pc = new RTCPeerConnection(this.pcConfig);
+
+                // Add local stream to peer connection
+                if (this.localStream) {
+                    this.localStream.getTracks().forEach(track => {
+                        this.pc.addTrack(track, this.localStream);
+                    });
+                }
+
+                // Handle remote stream
+                this.pc.ontrack = (event) => {
+                    console.log('Received remote stream');
+                    remoteVideo.srcObject = event.streams[0];
+                };
+
+                // Handle ICE candidates
+                this.pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        this.socket.emit('message', {
+                            type: 'candidate',
+                            label: event.candidate.sdpMLineIndex,
+                            id: event.candidate.sdpMid,
+                            candidate: event.candidate.candidate
+                        }, null, this.roomId);
+                    }
+                };
+
+                // Handle connection state changes
+                this.pc.onconnectionstatechange = () => {
+                    console.log('Connection state:', this.pc.connectionState);
+                    if (this.pc.connectionState === 'failed') {
+                        this.endCall();
+                    }
+                };
+            }
+
+            async makeOffer() {
+                try {
+                    const offer = await this.pc.createOffer();
+                    await this.pc.setLocalDescription(offer);
+                    this.socket.emit('message', offer, null, this.roomId);
+                } catch (error) {
+                    console.error('Error creating offer:', error);
+                }
+            }
+
+            async handleSignalingMessage(message, socketId) {
+                try {
+                    switch (message.type) {
+                        case 'offer':
+                            await this.pc.setRemoteDescription(new RTCSessionDescription(message));
+                            const answer = await this.pc.createAnswer();
+                            await this.pc.setLocalDescription(answer);
+                            this.socket.emit('message', answer, null, this.roomId);
+                            break;
+                        case 'answer':
+                            await this.pc.setRemoteDescription(new RTCSessionDescription(message));
+                            break;
+                        case 'candidate':
+                            const candidate = new RTCIceCandidate({
+                                sdpMLineIndex: message.label,
+                                candidate: message.candidate
+                            });
+                            await this.pc.addIceCandidate(candidate);
+                            break;
+                        case 'leave':
+                            this.endCall();
+                            break;
+                    }
+                } catch (error) {
+                    console.error('Error handling signaling message:', error);
+                }
+            }
+
+            endCall() {
+                if (this.pc) {
+                    this.pc.close();
+                    this.pc = null;
+                }
+                if (this.localStream) {
+                    this.localStream.getTracks().forEach(track => track.stop());
+                    this.localStream = null;
+                }
+                remoteVideo.srcObject = null;
+                localVideo.srcObject = null;
+            }
+        }
+
+        // Event Listeners
+        registerBtn.addEventListener('click', register);
+        acceptCallBtn.addEventListener('click', acceptCall);
+        rejectCallBtn.addEventListener('click', rejectCall);
+        endCallBtn.addEventListener('click', endCall);
+
+        usernameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                register();
+            }
+        });
+
+        // Socket event listeners
+        socket.on('registration-success', (user) => {
+            currentUser = user;
+            currentUsername.textContent = user.username;
+            loginSection.style.display = 'none';
+            mainSection.style.display = 'block';
+            showNotification('Successfully joined!', 'success');
+            socket.emit('get-online-users');
+        });
+
+        socket.on('registration-failed', (message) => {
+            showNotification(message, 'error');
+        });
+
+        socket.on('users-updated', (users) => {
+            updateUserList(users);
+        });
+
+        socket.on('incoming-call', (callData) => {
+            currentCall = callData;
+            callerName.textContent = callData.callerName;
+            overlay.style.display = 'block';
+            incomingCallPopup.style.display = 'block';
+        });
+
+        socket.on('call-accepted', (data) => {
+            showNotification(`${data.accepterName} accepted your call!`, 'success');
+            startCall(data.roomId, data.accepterName);
+        });
+
+        socket.on('call-rejected', (rejectorName) => {
+            showNotification(`${rejectorName} rejected your call`, 'error');
+            currentCall = null;
+        });
+
+        socket.on('call-connected', (data) => {
+            startCall(data.roomId, data.callerName);
+        });
+
+        socket.on('call-ended', () => {
+            endCall();
+            showNotification('Call ended', 'info');
+        });
+
+        socket.on('call-failed', (message) => {
+            showNotification(message, 'error');
+        });
+
+        // Functions
+        function register() {
+            const username = usernameInput.value.trim();
+            if (!username) {
+                showNotification('Please enter a username', 'error');
+                return;
+            }
+            socket.emit('register', username);
+        }
+
+        function updateUserList(users) {
+            userList.innerHTML = '';
+            users.forEach(user => {
+                if (user.id !== currentUser?.id) {
+                    const userCard = document.createElement('div');
+                    userCard.className = `user-card ${user.inCall ? 'in-call' : ''}`;
+                    userCard.innerHTML = `
+                        <div>
+                            <span class="user-status ${user.inCall ? 'status-busy' : 'status-online'}"></span>
+                            <strong>${user.username}</strong>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <small>${user.inCall ? 'In Call' : 'Available'}</small>
+                        </div>
+                    `;
+                    
+                    if (!user.inCall) {
+                        userCard.style.cursor = 'pointer';
+                        userCard.addEventListener('click', () => initiateCall(user.id, user.username));
+                    }
+                    
+                    userList.appendChild(userCard);
+                }
+            });
+        }
+
+        function initiateCall(targetUserId, targetUsername) {
+            socket.emit('initiate-call', targetUserId);
+            showNotification(`Calling ${targetUsername}...`, 'info');
+        }
+
+        function acceptCall() {
+            hideIncomingCallPopup();
+            socket.emit('accept-call', {
+                callerId: currentCall.callerId,
+                roomId: currentCall.roomId
+            });
+        }
+
+        function rejectCall() {
+            hideIncomingCallPopup();
+            socket.emit('reject-call', currentCall.callerId);
+            currentCall = null;
+        }
+
+        function hideIncomingCallPopup() {
+            overlay.style.display = 'none';
+            incomingCallPopup.style.display = 'none';
+        }
+
+        async function startCall(roomId, otherUserName) {
+            try {
+                // Initialize WebRTC
+                webrtc = new SimpleWebRTC(socket, pcConfig);
+                await webrtc.getLocalStream();
+                
+                // Show call section
+                mainSection.style.display = 'none';
+                callSection.style.display = 'block';
+                currentCallUser.textContent = otherUserName;
+                
+                // Join the call room
+                webrtc.joinRoom(roomId);
+                
+                showNotification('Call connected!', 'success');
+            } catch (error) {
+                console.error('Error starting call:', error);
+                showNotification('Failed to start call', 'error');
+                endCall();
+            }
+        }
+
+        function endCall() {
+            if (webrtc) {
+                webrtc.endCall();
+                webrtc = null;
+            }
+            
+            // Notify server about call end
+            if (currentCall) {
+                socket.emit('end-call', currentCall.roomId);
+            }
+            
+            // Reset UI
+            callSection.style.display = 'none';
+            mainSection.style.display = 'block';
+            currentCall = null;
+            currentCallUser.textContent = '';
+        }
+
+        function showNotification(message, type = 'info') {
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 4000);
+        }
+
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && webrtc) {
+                // Optionally pause video when tab is not visible
+            } else if (!document.hidden && webrtc) {
+                // Resume video when tab becomes visible
+            }
+        });
+
+        // Handle beforeunload to clean up
+        window.addEventListener('beforeunload', () => {
+            if (webrtc) {
+                endCall();
+            }
+        });
+    </script>
+</body>
 </html>

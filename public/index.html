@@ -33,8 +33,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>WebRTC Video Conference</title>
-    <link rel="shortcut icon" type="image/ico" href="/favicon.ico" />
+    <title>Audio Call App</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -209,45 +208,65 @@
             display: none;
             background: white;
             border-radius: 15px;
-            padding: 20px;
+            padding: 40px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
         }
 
-        .video-container {
-            position: relative;
-            background: #000;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-
-        .remote-video {
-            width: 100%;
-            height: 400px;
-            object-fit: cover;
-        }
-
-        .local-video-container {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 200px;
+        .call-avatar {
+            width: 150px;
             height: 150px;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            border: 3px solid white;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+            margin: 0 auto 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
 
-        .local-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .call-info h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .call-status {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .audio-visualizer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 50px;
+            margin: 20px 0;
+        }
+
+        .audio-bar {
+            width: 4px;
+            height: 20px;
+            background: #667eea;
+            margin: 0 2px;
+            border-radius: 2px;
+            animation: audioWave 1s ease-in-out infinite;
+        }
+
+        .audio-bar:nth-child(2) { animation-delay: 0.1s; }
+        .audio-bar:nth-child(3) { animation-delay: 0.2s; }
+        .audio-bar:nth-child(4) { animation-delay: 0.3s; }
+        .audio-bar:nth-child(5) { animation-delay: 0.4s; }
+
+        @keyframes audioWave {
+            0%, 100% { height: 20px; }
+            50% { height: 40px; }
         }
 
         .call-controls {
-            text-align: center;
-            padding: 20px;
+            margin-top: 30px;
         }
 
         .call-controls .btn {
@@ -273,6 +292,7 @@
 
         .notification.success { background: #28a745; }
         .notification.error { background: #dc3545; }
+        .notification.info { background: #17a2b8; }
 
         .incoming-call-popup {
             position: fixed;
@@ -318,6 +338,11 @@
             display: none;
         }
 
+        /* Hide audio elements but keep them functional */
+        audio {
+            display: none;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -332,15 +357,14 @@
                 margin: 0 10px;
             }
             
-            .local-video-container {
-                width: 120px;
-                height: 90px;
-                bottom: 10px;
-                right: 10px;
-            }
-            
             .user-list {
                 grid-template-columns: 1fr;
+            }
+
+            .call-avatar {
+                width: 120px;
+                height: 120px;
+                font-size: 2.5rem;
             }
         }
     </style>
@@ -349,8 +373,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-video"></i> Video Call App</h1>
-            <p>Connect with friends through high-quality video calls</p>
+            <h1><i class="fas fa-phone"></i> Audio Call App</h1>
+            <p>Connect with friends through high-quality audio calls</p>
         </div>
 
         <!-- Login Section -->
@@ -368,7 +392,7 @@
         <div id="mainSection" class="main-section">
             <div class="user-info">
                 <h2>Welcome, <span id="currentUsername"></span>!</h2>
-                <p>You're now online and ready to make calls</p>
+                <p>You're now online and ready to make audio calls</p>
             </div>
 
             <div class="online-users">
@@ -381,23 +405,36 @@
 
         <!-- Call Section -->
         <div id="callSection" class="call-section">
-            <div class="video-container">
-                <video id="remoteVideo" class="remote-video" autoplay playsinline></video>
-                <div class="local-video-container">
-                    <video id="localVideo" class="local-video" autoplay playsinline muted></video>
-                </div>
+            <div class="call-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            
+            <div class="call-info">
+                <h2 id="currentCallUser">User Name</h2>
+                <div class="call-status" id="callStatus">Connecting...</div>
+            </div>
+
+            <div class="audio-visualizer" id="audioVisualizer" style="display: none;">
+                <div class="audio-bar"></div>
+                <div class="audio-bar"></div>
+                <div class="audio-bar"></div>
+                <div class="audio-bar"></div>
+                <div class="audio-bar"></div>
             </div>
             
             <div class="call-controls">
-                <button id="endCallBtn" class="btn btn-danger">
+                <button id="muteBtn" class="btn btn-primary" title="Mute/Unmute">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <button id="endCallBtn" class="btn btn-danger" title="End Call">
                     <i class="fas fa-phone-slash"></i>
                 </button>
             </div>
-            
-            <div style="text-align: center; margin-top: 15px;">
-                <p>In call with: <strong id="currentCallUser"></strong></p>
-            </div>
         </div>
+
+        <!-- Audio elements -->
+        <audio id="localAudio" muted></audio>
+        <audio id="remoteAudio" autoplay></audio>
     </div>
 
     <!-- Notifications -->
@@ -426,7 +463,8 @@
         const socket = io.connect();
         let currentUser = null;
         let currentCall = null;
-        let webrtc = null;
+        let audioCall = null;
+        let isMuted = false;
 
         // DOM elements
         const loginSection = document.getElementById('loginSection');
@@ -442,81 +480,187 @@
         const callerName = document.getElementById('callerName');
         const acceptCallBtn = document.getElementById('acceptCallBtn');
         const rejectCallBtn = document.getElementById('rejectCallBtn');
-        const localVideo = document.getElementById('localVideo');
-        const remoteVideo = document.getElementById('remoteVideo');
+        const localAudio = document.getElementById('localAudio');
+        const remoteAudio = document.getElementById('remoteAudio');
         const endCallBtn = document.getElementById('endCallBtn');
+        const muteBtn = document.getElementById('muteBtn');
         const currentCallUser = document.getElementById('currentCallUser');
+        const callStatus = document.getElementById('callStatus');
+        const audioVisualizer = document.getElementById('audioVisualizer');
 
         // WebRTC configuration
         const pcConfig = {
             iceServers: [
-                {
-                    urls: [
-                        'stun:stun.l.google.com:19302',
-                        'stun:stun1.l.google.com:19302',
-                        'stun:stun2.l.google.com:19302',
-                    ],
-                },
-                {
-                    urls: 'turn:relay.metered.ca:443?transport=udp',
-                    username: 'openai',
-                    credential: 'openai123'
-                },
-                {
-                    urls: 'turn:relay.metered.ca:443?transport=tcp',
-                    username: 'openai',
-                    credential: 'openai123'
-                },
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
             ]
         };
 
-        // Initialize WebRTC class (simplified version for calling)
-        class SimpleWebRTC {
-            constructor(socket, pcConfig) {
+        // Audio Call Handler
+        class AudioCall {
+            constructor(socket, config) {
                 this.socket = socket;
-                this.pcConfig = pcConfig;
+                this.config = config;
                 this.pc = null;
                 this.localStream = null;
                 this.roomId = null;
+                this.isInitiator = false;
                 this.setupSocketListeners();
+            }
+
+            setupSocketListeners() {
+                this.socket.on('created', (room, socketId) => {
+                    console.log('Created room:', room);
+                    this.isInitiator = true;
+                });
+
+                this.socket.on('joined', (room, socketId) => {
+                    console.log('Joined room:', room);
+                });
+
+                this.socket.on('ready', (socketId) => {
+                    console.log('Ready for connection');
+                    if (this.localStream) {
+                        this.createPeerConnection();
+                        if (this.isInitiator) {
+                            this.makeOffer();
+                        }
+                    }
+                });
+
+                this.socket.on('message', (message, socketId) => {
+                    this.handleMessage(message, socketId);
+                });
             }
 
             async getLocalStream() {
                 try {
                     this.localStream = await navigator.mediaDevices.getUserMedia({
-                        video: { width: 640, height: 480 },
-                        audio: true
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        },
+                        video: false
                     });
-                    localVideo.srcObject = this.localStream;
+                    
+                    localAudio.srcObject = this.localStream;
+                    console.log('Got local audio stream');
                     return this.localStream;
                 } catch (error) {
-                    console.error('Error accessing media devices:', error);
-                    showNotification('Unable to access camera/microphone', 'error');
+                    console.error('Error getting audio:', error);
                     throw error;
                 }
             }
 
-            setupSocketListeners() {
-                // WebRTC signaling events
-                this.socket.on('created', (room, socketId) => {
-                    console.log('Created room:', room);
-                });
+            createPeerConnection() {
+                console.log('Creating peer connection');
+                this.pc = new RTCPeerConnection(this.config);
 
-                this.socket.on('joined', (room, socketId) => {
-                    console.log('Joined room:', room);
-                    this.createPeerConnection();
-                    this.makeOffer();
-                });
+                // Add local stream
+                if (this.localStream) {
+                    this.localStream.getTracks().forEach(track => {
+                        this.pc.addTrack(track, this.localStream);
+                        console.log('Added local track:', track.kind);
+                    });
+                }
 
-                this.socket.on('ready', (socketId) => {
-                    console.log('Ready to connect with:', socketId);
-                    this.createPeerConnection();
-                });
+                // Handle remote stream
+                this.pc.ontrack = (event) => {
+                    console.log('Received remote stream');
+                    remoteAudio.srcObject = event.streams[0];
+                    this.showAudioVisualizer();
+                    updateCallStatus('Connected');
+                };
 
-                this.socket.on('message', (message, socketId) => {
-                    console.log('Received message:', message.type);
-                    this.handleSignalingMessage(message, socketId);
-                });
+                // Handle ICE candidates
+                this.pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        console.log('Sending ICE candidate');
+                        this.sendMessage({
+                            type: 'candidate',
+                            candidate: event.candidate.candidate,
+                            sdpMLineIndex: event.candidate.sdpMLineIndex,
+                            sdpMid: event.candidate.sdpMid
+                        });
+                    }
+                };
+
+                // Connection state monitoring
+                this.pc.onconnectionstatechange = () => {
+                    console.log('Connection state:', this.pc.connectionState);
+                    switch (this.pc.connectionState) {
+                        case 'connected':
+                            updateCallStatus('Connected');
+                            showNotification('Call connected!', 'success');
+                            break;
+                        case 'disconnected':
+                            updateCallStatus('Reconnecting...');
+                            break;
+                        case 'failed':
+                            updateCallStatus('Connection failed');
+                            showNotification('Call failed', 'error');
+                            setTimeout(() => this.endCall(), 3000);
+                            break;
+                    }
+                };
+            }
+
+            async makeOffer() {
+                try {
+                    console.log('Creating offer');
+                    const offer = await this.pc.createOffer({
+                        offerToReceiveAudio: true,
+                        offerToReceiveVideo: false
+                    });
+                    
+                    await this.pc.setLocalDescription(offer);
+                    this.sendMessage(offer);
+                    console.log('Offer sent');
+                } catch (error) {
+                    console.error('Error creating offer:', error);
+                }
+            }
+
+            async handleMessage(message, socketId) {
+                console.log('Handling message:', message.type);
+                
+                try {
+                    switch (message.type) {
+                        case 'offer':
+                            if (!this.pc) {
+                                this.createPeerConnection();
+                            }
+                            await this.pc.setRemoteDescription(message);
+                            const answer = await this.pc.createAnswer();
+                            await this.pc.setLocalDescription(answer);
+                            this.sendMessage(answer);
+                            break;
+
+                        case 'answer':
+                            await this.pc.setRemoteDescription(message);
+                            break;
+
+                        case 'candidate':
+                            const candidate = new RTCIceCandidate({
+                                candidate: message.candidate,
+                                sdpMLineIndex: message.sdpMLineIndex,
+                                sdpMid: message.sdpMid
+                            });
+                            await this.pc.addIceCandidate(candidate);
+                            break;
+
+                        case 'leave':
+                            this.endCall();
+                            break;
+                    }
+                } catch (error) {
+                    console.error('Error handling message:', error);
+                }
+            }
+
+            sendMessage(message) {
+                this.socket.emit('message', message, null, this.roomId);
             }
 
             joinRoom(roomId) {
@@ -524,92 +668,66 @@
                 this.socket.emit('join-call-room', roomId);
             }
 
-            createPeerConnection() {
-                this.pc = new RTCPeerConnection(this.pcConfig);
+            showAudioVisualizer() {
+                audioVisualizer.style.display = 'flex';
+            }
 
-                // Add local stream to peer connection
+            toggleMute() {
                 if (this.localStream) {
-                    this.localStream.getTracks().forEach(track => {
-                        this.pc.addTrack(track, this.localStream);
-                    });
-                }
-
-                // Handle remote stream
-                this.pc.ontrack = (event) => {
-                    console.log('Received remote stream');
-                    remoteVideo.srcObject = event.streams[0];
-                };
-
-                // Handle ICE candidates
-                this.pc.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        this.socket.emit('message', {
-                            type: 'candidate',
-                            label: event.candidate.sdpMLineIndex,
-                            id: event.candidate.sdpMid,
-                            candidate: event.candidate.candidate
-                        }, null, this.roomId);
+                    const audioTrack = this.localStream.getAudioTracks()[0];
+                    if (audioTrack) {
+                        audioTrack.enabled = !audioTrack.enabled;
+                        isMuted = !audioTrack.enabled;
+                        
+                        const muteIcon = muteBtn.querySelector('i');
+                        if (isMuted) {
+                            muteIcon.className = 'fas fa-microphone-slash';
+                            muteBtn.style.background = '#dc3545';
+                            showNotification('Microphone muted', 'info');
+                        } else {
+                            muteIcon.className = 'fas fa-microphone';
+                            muteBtn.style.background = '#667eea';
+                            showNotification('Microphone unmuted', 'info');
+                        }
                     }
-                };
-
-                // Handle connection state changes
-                this.pc.onconnectionstatechange = () => {
-                    console.log('Connection state:', this.pc.connectionState);
-                    if (this.pc.connectionState === 'failed') {
-                        this.endCall();
-                    }
-                };
-            }
-
-            async makeOffer() {
-                try {
-                    const offer = await this.pc.createOffer();
-                    await this.pc.setLocalDescription(offer);
-                    this.socket.emit('message', offer, null, this.roomId);
-                } catch (error) {
-                    console.error('Error creating offer:', error);
-                }
-            }
-
-            async handleSignalingMessage(message, socketId) {
-                try {
-                    switch (message.type) {
-                        case 'offer':
-                            await this.pc.setRemoteDescription(new RTCSessionDescription(message));
-                            const answer = await this.pc.createAnswer();
-                            await this.pc.setLocalDescription(answer);
-                            this.socket.emit('message', answer, null, this.roomId);
-                            break;
-                        case 'answer':
-                            await this.pc.setRemoteDescription(new RTCSessionDescription(message));
-                            break;
-                        case 'candidate':
-                            const candidate = new RTCIceCandidate({
-                                sdpMLineIndex: message.label,
-                                candidate: message.candidate
-                            });
-                            await this.pc.addIceCandidate(candidate);
-                            break;
-                        case 'leave':
-                            this.endCall();
-                            break;
-                    }
-                } catch (error) {
-                    console.error('Error handling signaling message:', error);
                 }
             }
 
             endCall() {
-                if (this.pc) {
-                    this.pc.close();
-                    this.pc = null;
-                }
+                console.log('Ending call');
+                
+                // Stop local stream
                 if (this.localStream) {
                     this.localStream.getTracks().forEach(track => track.stop());
                     this.localStream = null;
                 }
-                remoteVideo.srcObject = null;
-                localVideo.srcObject = null;
+
+                // Close peer connection
+                if (this.pc) {
+                    this.pc.close();
+                    this.pc = null;
+                }
+
+                // Clear audio sources
+                localAudio.srcObject = null;
+                remoteAudio.srcObject = null;
+
+                // Send leave message
+                if (this.roomId) {
+                    this.sendMessage({ type: 'leave' });
+                    this.socket.emit('leave room', this.roomId);
+                }
+
+                // Reset state
+                this.roomId = null;
+                this.isInitiator = false;
+                audioVisualizer.style.display = 'none';
+                
+                // Reset mute button
+                const muteIcon = muteBtn.querySelector('i');
+                muteIcon.className = 'fas fa-microphone';
+                muteBtn.style.background = '#667eea';
+                isMuted = false;
             }
         }
 
@@ -618,11 +736,10 @@
         acceptCallBtn.addEventListener('click', acceptCall);
         rejectCallBtn.addEventListener('click', rejectCall);
         endCallBtn.addEventListener('click', endCall);
+        muteBtn.addEventListener('click', toggleMute);
 
         usernameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                register();
-            }
+            if (e.key === 'Enter') register();
         });
 
         // Socket event listeners
@@ -735,33 +852,32 @@
 
         async function startCall(roomId, otherUserName) {
             try {
-                // Initialize WebRTC
-                webrtc = new SimpleWebRTC(socket, pcConfig);
-                await webrtc.getLocalStream();
+                // Initialize audio call
+                audioCall = new AudioCall(socket, pcConfig);
+                await audioCall.getLocalStream();
                 
                 // Show call section
                 mainSection.style.display = 'none';
                 callSection.style.display = 'block';
                 currentCallUser.textContent = otherUserName;
+                updateCallStatus('Connecting...');
                 
-                // Join the call room
-                webrtc.joinRoom(roomId);
+                // Join room
+                audioCall.joinRoom(roomId);
                 
-                showNotification('Call connected!', 'success');
             } catch (error) {
                 console.error('Error starting call:', error);
-                showNotification('Failed to start call', 'error');
+                showNotification('Failed to access microphone', 'error');
                 endCall();
             }
         }
 
         function endCall() {
-            if (webrtc) {
-                webrtc.endCall();
-                webrtc = null;
+            if (audioCall) {
+                audioCall.endCall();
+                audioCall = null;
             }
             
-            // Notify server about call end
             if (currentCall) {
                 socket.emit('end-call', currentCall.roomId);
             }
@@ -770,7 +886,16 @@
             callSection.style.display = 'none';
             mainSection.style.display = 'block';
             currentCall = null;
-            currentCallUser.textContent = '';
+        }
+
+        function toggleMute() {
+            if (audioCall) {
+                audioCall.toggleMute();
+            }
+        }
+
+        function updateCallStatus(status) {
+            callStatus.textContent = status;
         }
 
         function showNotification(message, type = 'info') {
@@ -783,18 +908,9 @@
             }, 4000);
         }
 
-        // Handle page visibility changes
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden && webrtc) {
-                // Optionally pause video when tab is not visible
-            } else if (!document.hidden && webrtc) {
-                // Resume video when tab becomes visible
-            }
-        });
-
-        // Handle beforeunload to clean up
+        // Handle page cleanup
         window.addEventListener('beforeunload', () => {
-            if (webrtc) {
+            if (audioCall) {
                 endCall();
             }
         });

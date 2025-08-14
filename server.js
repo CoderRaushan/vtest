@@ -311,18 +311,24 @@ io.sockets.on('connection', function (socket) {
         const clientsInRoom = io.sockets.adapter.rooms.get(room);
         let numClients = clientsInRoom ? clientsInRoom.size : 0;
 
+        log('Room ' + room + ' now has ' + numClients + ' client(s)');
+
         if (numClients < 2) {
             socket.join(room);
+            log('Client ' + socket.id + ' joined room ' + room);
             
             if (numClients === 0) {
+                // First user creates the room
                 socket.emit('created', room, socket.id);
-            } else {
+            } else if (numClients === 1) {
+                // Second user joins
+                log('Client ' + socket.id + ' joined room ' + room);
                 io.sockets.in(room).emit('join', room);
                 socket.emit('joined', room, socket.id);
                 io.sockets.in(room).emit('ready', socket.id);
             }
         } else {
-            socket.emit('room-full');
+            socket.emit('room-full', room);
         }
     });
 
